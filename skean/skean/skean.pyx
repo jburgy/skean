@@ -35,11 +35,18 @@ cdef Py_ssize_t _ensure_extra_index() except -1:
 @cython.final
 cdef class Node:
     cdef public object value
+    cdef public bint valid
     cdef public set callers
 
     def __cinit__(self):
         self.value = None
+        self.valid = False
         self.callers = set()
+
+    cpdef void invalidate(self):
+        self.valid = False
+        for caller in self.callers:
+            caller.invalidate()
 
 
 def _trampoline(*args):
@@ -99,9 +106,14 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *fram
     cdef tuple args = _frame_args(frame)
     cdef Node node = <Node>wrapper(*args)
 
-    frame.f_trace = <PyObject *>node
-    cdef PyObject *value = _PyEval_EvalFrameDefault(tstate, frame, throwflag)
-    node.value = <object>value
+    cdef PyObject *value
+    if node.valid:
+        value = <PyObject *>node.value
+    else:
+        frame.f_trace = <PyObject *>node
+        value = _PyEval_EvalFrameDefault(tstate, frame, throwflag)
+        node.valid = True
+        node.value = <object>value
     if caller is not NULL:
         node.callers.add(<Node>caller)
     return value
