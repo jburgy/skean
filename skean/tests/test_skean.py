@@ -7,34 +7,43 @@ from skean import sheath, tracing, get_lru_cache
 
 
 @pytest.fixture
-def response():
+def lru_cache():
     """Sample pytest fixture.
 
     See more at: http://doc.pytest.org/en/latest/fixture.html
     """
-    # import requests
-    # return requests.get('https://github.com/audreyr/cookiecutter-pypackage')
-
-
-def test_content():
-    """Sample pytest test function with the pytest fixture as an argument."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
-
     @sheath
-    def outer(f, a, b):
-        return f(a, b)
-
-    @sheath
-    def inner(a, b):
-        return a + b
+    def factorial(n):
+        return n * factorial(n - 1) if n else 1
 
     with tracing():
-        print(outer(inner, 4, 5.0))
+        factorial(10)
 
-    node = get_lru_cache(inner)(4, 5.0)
-    print(node, node.callers)
-    # print(lru_cache.cache_info())
+    return get_lru_cache(factorial)
 
 
-test_content()
+def test_callers(lru_cache):
+    """Sample pytest test function with the pytest fixture as an argument."""
+    root = lru_cache(0)
+
+    n, factorial = 0, 1
+
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        value = node.value
+        assert node.valid
+        assert value == factorial
+        n += 1
+        factorial *= n
+        stack.extend(node.callers)
+
+
+def test_invalidate(lru_cache):
+    root = lru_cache(0)
+    root.invalidate()
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        assert not node.valid
+        stack.extend(node.callers)
