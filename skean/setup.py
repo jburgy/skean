@@ -2,7 +2,8 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import setup
+from Cython.Build import cythonize
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
@@ -40,7 +41,8 @@ setup(
     include_package_data=True,
     keywords='skean',
     name='skean',
-    packages=find_packages(include=['skean', 'skean.*']),
+    setup_requires=["cython"],
+    ext_modules=cythonize("skean/skean.pyx", language_level=3),
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/jburgy/skean',
