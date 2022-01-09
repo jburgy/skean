@@ -3,15 +3,16 @@
 """Tests for `skean` package."""
 import pytest
 
-from skean import sheath, tracing, get_lru_cache
+from skean import sheath, tracing
 
 
 @pytest.fixture
-def lru_cache():
+def cached_factorial():
     """Sample pytest fixture.
 
     See more at: http://doc.pytest.org/en/latest/fixture.html
     """
+
     @sheath
     def factorial(n):
         return n * factorial(n - 1) if n else 1
@@ -19,28 +20,26 @@ def lru_cache():
     with tracing():
         factorial(10)
 
-    return get_lru_cache(factorial)
+    return factorial
 
 
-def test_callers(lru_cache):
+def test_callers(cached_factorial):
     """Sample pytest test function with the pytest fixture as an argument."""
-    root = lru_cache(0)
+    root = cached_factorial[0]
 
     n, factorial = 0, 1
 
     stack = [root]
     while stack:
         node = stack.pop()
-        value = node.value
-        assert node.valid
-        assert value == factorial
+        assert node.valid and node.value == factorial
         n += 1
         factorial *= n
         stack.extend(node.callers)
 
 
-def test_invalidate(lru_cache):
-    root = lru_cache(0)
+def test_invalidate(cached_factorial):
+    root = cached_factorial[0]
     root.invalidate()
     stack = [root]
     while stack:

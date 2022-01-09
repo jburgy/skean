@@ -3,10 +3,11 @@
 from functools import _CacheInfo, _lru_cache_wrapper
 
 import cython
+from cpython.function cimport PyFunction_GetCode
 from cpython.mem cimport PyMem_Free
 from cpython.pystate cimport PyInterpreterState, PyThreadState_Get
 from cpython.pythread cimport PyThread_tss_alloc, PyThread_tss_create, PyThread_tss_get, PyThread_tss_is_created, PyThread_tss_set
-from cpython.ref cimport Py_INCREF
+from cpython.ref cimport Py_DECREF, Py_INCREF
 from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
 
 cdef Py_tss_t *g_extra_slot = NULL
@@ -119,18 +120,28 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *fram
     return value
 
 
-def get_lru_cache(func) -> _lru_cache_wrapper:
-    return _code_wrapper(<PyObject *>func.__code__, 0)
+@cython.final
+cdef class sheath:
+    cdef object func
+    cdef object wrapper
 
+    def __cinit__(self, func):
+        self.func = func
+        self.wrapper = _code_wrapper(PyFunction_GetCode(func), 1)
 
-def sheath(func) -> object:
-    _code_wrapper(<PyObject *>func.__code__, 1)
-    return func
+    def __dealloc__(self):
+        Py_DECREF(self.func)
+        Py_DECREF(self.wrapper)
+
+    def __call__(self, *args):
+        return self.func(*args)
+
+    def __getitem__(self, args):
+        return self.wrapper(*(args if isinstance(args, tuple) else (args,)))
 
 
 @cython.final
 cdef class tracing:
-
     cdef PyInterpreterState *interp
 
     def __init__(self):
