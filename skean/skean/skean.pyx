@@ -5,7 +5,8 @@ from functools import _CacheInfo, _lru_cache_wrapper
 import cython
 from cpython.function cimport PyFunction_GetCode
 from cpython.mem cimport PyMem_Free
-from cpython.pystate cimport PyInterpreterState, PyThreadState_Get
+from cpython.object cimport PyObject_CallObject
+from cpython.pystate cimport PyInterpreterState, PyThreadState
 from cpython.pythread cimport PyThread_tss_alloc, PyThread_tss_create, PyThread_tss_get, PyThread_tss_is_created, PyThread_tss_set
 from cpython.ref cimport Py_DECREF, Py_INCREF
 from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
@@ -57,6 +58,22 @@ def _trampoline(*args):
 
 
 cdef object _code_wrapper(PyObject *code, bint create):
+    """Create or retrieve LRU cache attached to code object
+
+    PEP 523 adds a new `extra` field to code objects.  `skean` leverages that
+    field to store a `functools._lru_cache_wrapper` to hold on to nodes which
+    wrap function return values.
+
+    Understanding how `skean` uses the wrapper differently from `functools` is
+    important.  `functools` wraps the function directly.  This does not let us
+    distinguish between wrapped and unwrapped results since only the wrapped
+    function can be called.
+
+    `skean` returns the _original_ function.  Calling it outside a `tracing`
+    block bypasses the LRU cache.  In a `tracing` context, the default frame
+    evaluation has been replaced by a custom function which calls this function
+    with `create` set to `False`.
+    """
     cdef Py_ssize_t index = _ensure_extra_index()
     cdef PyObject *extra
 
@@ -94,7 +111,7 @@ cdef tuple _frame_args(PyFrameObject *frame_obj):
     cdef tuple args = PyTuple_New(argc)
 
     for i in range(argc):
-        PyTuple_SET_ITEM(args, i, <object>localsplus[i])    
+        PyTuple_SET_ITEM(args, i, <object>localsplus[i])
     return args
 
 
@@ -105,7 +122,7 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *fram
 
     cdef PyObject *caller = _frame_caller(frame)
     cdef tuple args = _frame_args(frame)
-    cdef Node node = <Node>wrapper(*args)
+    cdef Node node = PyObject_CallObject(wrapper, args)  # TODO: _PyObject_Call(tstate, ...)
 
     cdef PyObject *value
     if node.valid:
@@ -137,7 +154,7 @@ cdef class sheath:
         return self.func(*args)
 
     def __getitem__(self, args):
-        return self.wrapper(*(args if isinstance(args, tuple) else (args,)))
+        return PyObject_CallObject(self.wrapper, args if isinstance(args, tuple) else (args,))
 
 
 @cython.final
@@ -145,8 +162,7 @@ cdef class tracing:
     cdef PyInterpreterState *interp
 
     def __init__(self):
-        cdef PyThreadState *tstate = PyThreadState_Get()
-        self.interp = tstate.interp
+        self.interp = PyInterpreterState_Get()
 
     def __enter__(self):
         _PyInterpreterState_SetEvalFrameFunc(self.interp, _PyEval_EvalFrameCache)

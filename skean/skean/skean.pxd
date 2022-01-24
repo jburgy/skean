@@ -1,4 +1,4 @@
-from cpython.pystate cimport PyInterpreterState
+from cpython.pystate cimport PyInterpreterState, PyThreadState
 from cpython.ref cimport PyObject
 
 
@@ -59,11 +59,7 @@ cdef extern from "pyframe.h":
 
 
 cdef extern from "pystate.h":
-    ctypedef struct PyThreadState:
-        PyThreadState *prev
-        PyThreadState *next
-        PyInterpreterState *interp
-        # ...
+    PyInterpreterState *PyInterpreterState_Get()
 
     ctypedef PyObject *(*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int exc)
 
