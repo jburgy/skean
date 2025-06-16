@@ -24,6 +24,8 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+cython_debug/
+*skean.c
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
