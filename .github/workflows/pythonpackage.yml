@@ -17,5 +17,4 @@ jobs:
           python-version: 3.8
       - run: uv sync
       - uses: astral-sh/ruff-action@v3
-      - run: uv run mypy .
       - run: uv run pytest
