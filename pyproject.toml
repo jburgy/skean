@@ -1,5 +1,5 @@
 [build-system]
-requires = ["meson-python", "ninja", "cython"]
+requires = ["meson-python", "ninja", "Cython"]
 build-backend = "mesonpy"
 
 [project]
@@ -7,7 +7,7 @@ name = "skean"
 version = "0.1.0"
 description = "PEP 523 based directed acyclic graph implementation in python"
 readme = "README.md"
-requires-python = ">=3.6,<3.9"
+requires-python = ">=3.6,<3.10"
 license = {file = "LICENSE"}
 dependencies = []
 
