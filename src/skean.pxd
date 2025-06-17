@@ -52,20 +52,17 @@ cdef extern from "frameobject.h":
         PyObject *f_localsplus[1]  # locals+stack, dynamically sized
 
     PyFrameObject *PyFrame_GetBack(PyFrameObject *frame)
-
-
-cdef extern from "pyframe.h":
     PyCodeObject *PyFrame_GetCode(PyFrameObject *frame)
 
 
 cdef extern from "pystate.h":
     PyInterpreterState *PyInterpreterState_Get()
 
-    ctypedef PyObject *(*_PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int exc)
+    ctypedef PyObject *(*_PyFrameEvalFunction)(PyFrameObject *frame, int exc)
 
     void _PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp, _PyFrameEvalFunction eval_frame)
 
 
 cdef extern from "ceval.h":
-    PyObject *_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *frame, int exc)
+    PyObject *_PyEval_EvalFrameDefault(PyFrameObject *frame, int exc)
     Py_ssize_t _PyEval_RequestCodeExtraIndex(freefunc)

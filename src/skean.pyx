@@ -115,10 +115,10 @@ cdef tuple _frame_args(PyFrameObject *frame_obj):
     return args
 
 
-cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *frame, int throwflag):
+cdef PyObject *_PyEval_EvalFrameCache(PyFrameObject *frame, int throwflag) noexcept:
     cdef object wrapper = _code_wrapper(<PyObject *>PyFrame_GetCode(frame), 0)
     if wrapper is None:
-        return _PyEval_EvalFrameDefault(tstate, frame, throwflag)
+        return _PyEval_EvalFrameDefault(frame, throwflag)
 
     cdef PyObject *caller = _frame_caller(frame)
     cdef tuple args = _frame_args(frame)
@@ -129,7 +129,7 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *fram
         value = <PyObject *>node.value
     else:
         frame.f_trace = <PyObject *>node
-        value = _PyEval_EvalFrameDefault(tstate, frame, throwflag)
+        value = _PyEval_EvalFrameDefault(frame, throwflag)
         node.valid = True
         node.value = <object>value
     if caller is not NULL:

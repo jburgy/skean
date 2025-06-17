@@ -1,0 +1,18 @@
+[build-system]
+requires = ["meson-python", "ninja", "cython"]
+build-backend = "mesonpy"
+
+[project]
+name = "skean"
+version = "0.1.0"
+description = "PEP 523 based directed acyclic graph implementation in python"
+readme = "README.md"
+requires-python = ">=3.6,<3.9"
+license = {file = "LICENSE"}
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "mypy>=0.971",
+    "pytest>=7.0.1",
+]
