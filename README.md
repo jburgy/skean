@@ -38,3 +38,14 @@ assert fahrenheit.valid is True
 celsius.invalidate()
 assert fahrenheit.valid is False
 ```
+
+
+## Note on the name
+Like the [Dataflow programming](https://en.wikipedia.org/wiki/Dataflow_programming)
+page explains, `skean` models a program as a [Directed Acyclic Graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)
+or DAG.  As such, the name dagger came to mind.  Unfortunately, [dagger](https://pypi.org/project/dagger/)
+already exists on PyPI so we looked for synonyms.
+
+According to wiktionary, a skean is a "double-edged, leaf-shaped, typically bronze dagger
+formerly used in Ireland and Scotland."  This project's code quality clearly makes its usage
+[double-edged](https://en.wiktionary.org/wiki/double-edged). 
