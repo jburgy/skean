@@ -7,7 +7,7 @@ name = "skean"
 version = "0.1.0"
 description = "PEP 523 based directed acyclic graph implementation in python"
 readme = "README.md"
-requires-python = ">=3.6,<3.10"
+requires-python = ">=3.6"
 license = {file = "LICENSE"}
 dependencies = []
 
