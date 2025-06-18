@@ -9,4 +9,5 @@ py.extension_module(
     'skean',
     'src/skean.pyx',
     dependencies : py.dependency(),
+    install : true,
 )
