@@ -7,14 +7,14 @@ from skean import sheath, tracing
 
 
 @pytest.fixture
-def cached_factorial():
+def cached_factorial() -> sheath:
     """Sample pytest fixture.
 
     See more at: http://doc.pytest.org/en/latest/fixture.html
     """
 
     @sheath
-    def factorial(n):
+    def factorial(n: int) -> int:
         return n * factorial(n - 1) if n else 1
 
     with tracing():
