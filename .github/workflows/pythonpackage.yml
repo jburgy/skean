@@ -16,6 +16,6 @@ jobs:
         with:
           python-version: "3.10"
       - run: uv sync
-      - run: uv run mypy . --ignore-missing-imports
+      - run: uv run pyright
       - uses: astral-sh/ruff-action@v3
       - run: uv run pytest
