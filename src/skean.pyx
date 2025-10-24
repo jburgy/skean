@@ -23,7 +23,7 @@ cdef Py_ssize_t _ensure_extra_index() except -1:
             return -1
     cdef Py_ssize_t index = <Py_ssize_t>PyThread_tss_get(g_extra_slot)
     if index == 0:
-        index = _PyEval_RequestCodeExtraIndex(PyMem_Free)
+        index = PyUnstable_Eval_RequestCodeExtraIndex(PyMem_Free)
         if index < 0:
             return index
         if PyThread_tss_set(g_extra_slot, <void *>((index << 1) | 0x01)):
@@ -77,7 +77,7 @@ cdef object _code_wrapper(PyObject *code, bint create):
     cdef Py_ssize_t index = _ensure_extra_index()
     cdef PyObject *extra
 
-    cdef bint error = _PyCode_GetExtra(code, index, <void **>&extra)
+    cdef bint error = PyUnstable_Code_GetExtra(code, index, <void **>&extra)
     if not error and extra is not NULL:
         extra_obj = <PyObject *>extra
         return <object>extra_obj
@@ -85,7 +85,7 @@ cdef object _code_wrapper(PyObject *code, bint create):
     cdef object wrapper = None
     if create:
         wrapper = _lru_cache_wrapper(_trampoline, 128, True, _CacheInfo)
-        if _PyCode_SetExtra(code, index, <PyObject *>wrapper):
+        if PyUnstable_Code_SetExtra(code, index, <PyObject *>wrapper):
             return None
         Py_INCREF(wrapper)
 
@@ -118,11 +118,12 @@ cdef tuple _frame_args(PyFrameObject *frame_obj):
     return args
 
 
-cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *frame, int throwflag) noexcept:
-    cdef object wrapper = _code_wrapper(<PyObject *>PyFrame_GetCode(frame), 0)
+cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, _PyInterpreterFrame *_frame, int throwflag) noexcept:
+    cdef object wrapper = _code_wrapper(<PyObject *>PyUnstable_InterpreterFrame_GetCode(_frame), 0)
     if wrapper is None:
-        return _PyEval_EvalFrameDefault(tstate, frame, throwflag)
+        return _PyEval_EvalFrameDefault(tstate, _frame, throwflag)
 
+    cdef PyFrameObject *frame = PyThreadState_GetFrame(tstate)
     cdef object caller = _frame_caller(frame)
     cdef tuple args = _frame_args(frame)
     cdef Node node = PyObject_CallObject(wrapper, args)  # TODO: _PyObject_Call(tstate, ...)
@@ -132,7 +133,7 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *fram
         value = <PyObject *>node.value
     else:
         PyObject_SetAttrString(<object>frame, "f_trace", node)
-        value = _PyEval_EvalFrameDefault(tstate, frame, throwflag)
+        value = _PyEval_EvalFrameDefault(tstate, _frame, throwflag)
         node.valid = True
         node.value = <object>value
     if caller is not None:
