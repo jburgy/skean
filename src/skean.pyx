@@ -5,11 +5,11 @@ from functools import _CacheInfo, _lru_cache_wrapper
 import cython
 from cpython.function cimport PyFunction_GetCode
 from cpython.mem cimport PyMem_Free
-from cpython.object cimport PyObject_CallObject
+from cpython.object cimport PyObject_CallObject, PyObject_GetAttrString, PyObject_GetItem, PyObject_SetAttrString
 from cpython.pystate cimport PyInterpreterState, PyThreadState
 from cpython.pythread cimport PyThread_tss_alloc, PyThread_tss_create, PyThread_tss_get, PyThread_tss_is_created, PyThread_tss_set
 from cpython.ref cimport Py_DECREF, Py_INCREF
-from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
+from cpython.tuple cimport PyTuple_New, PyTuple_GET_ITEM, PyTuple_SET_ITEM
 
 cdef Py_tss_t *g_extra_slot = NULL
 
@@ -92,26 +92,29 @@ cdef object _code_wrapper(PyObject *code, bint create):
     return wrapper
 
 
-cdef PyObject *_frame_caller(PyFrameObject *frame):
+cdef object _frame_caller(PyFrameObject *frame):
     cdef PyFrameObject *f_back = PyFrame_GetBack(frame)
-    cdef PyObject *f_trace
+    cdef PyObject *frame_obj
+    cdef object f_trace
 
     while f_back:
-        f_trace = f_back.f_trace
+        frame_obj = <PyObject *>f_back
+        f_trace = PyObject_GetAttrString(<object>frame_obj, "f_trace")
         if f_trace:
             return f_trace
         f_back = PyFrame_GetBack(f_back)
-    return NULL
+    return None
 
 
 cdef tuple _frame_args(PyFrameObject *frame_obj):
     cdef PyCodeObject *code_obj = PyFrame_GetCode(frame_obj)
     cdef Py_ssize_t argc = <Py_ssize_t>(code_obj.co_argcount + code_obj.co_kwonlyargcount)
-    cdef PyObject **localsplus = <PyObject **>frame_obj.f_localsplus
+    cdef tuple varnames = <tuple>PyCode_GetVarnames(code_obj)
+    cdef object locals = <object>PyFrame_GetLocals(frame_obj)
     cdef tuple args = PyTuple_New(argc)
 
     for i in range(argc):
-        PyTuple_SET_ITEM(args, i, <object>localsplus[i])
+        PyTuple_SET_ITEM(args, i, PyObject_GetItem(locals, <object>PyTuple_GET_ITEM(varnames, i)))
     return args
 
 
@@ -120,7 +123,7 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *fram
     if wrapper is None:
         return _PyEval_EvalFrameDefault(tstate, frame, throwflag)
 
-    cdef PyObject *caller = _frame_caller(frame)
+    cdef object caller = _frame_caller(frame)
     cdef tuple args = _frame_args(frame)
     cdef Node node = PyObject_CallObject(wrapper, args)  # TODO: _PyObject_Call(tstate, ...)
 
@@ -128,11 +131,11 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, PyFrameObject *fram
     if node.valid:
         value = <PyObject *>node.value
     else:
-        frame.f_trace = <PyObject *>node
+        PyObject_SetAttrString(<object>frame, "f_trace", node)
         value = _PyEval_EvalFrameDefault(tstate, frame, throwflag)
         node.valid = True
         node.value = <object>value
-    if caller is not NULL:
+    if caller is not None:
         node.callers.add(<Node>caller)
     return value
 
