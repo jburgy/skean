@@ -106,15 +106,13 @@ cdef object _frame_caller(PyFrameObject *frame):
     return None
 
 
-cdef tuple _frame_args(PyFrameObject *frame_obj, PyObject *code):
+cdef tuple _frame_args(PyObject *code, PyObject **localsplus):
     cdef PyCodeObject *code_obj = <PyCodeObject *>code
     cdef Py_ssize_t argc = <Py_ssize_t>(code_obj.co_argcount + code_obj.co_kwonlyargcount)
-    cdef tuple varnames = <tuple>PyCode_GetVarnames(code_obj)
-    cdef object locals = <object>PyFrame_GetLocals(frame_obj)
     cdef tuple args = PyTuple_New(argc)
 
     for i in range(argc):
-        PyTuple_SET_ITEM(args, i, PyObject_GetItem(locals, <object>PyTuple_GET_ITEM(varnames, i)))
+        PyTuple_SET_ITEM(args, i, <object>localsplus[i])
     return args
 
 
@@ -126,7 +124,7 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, _PyInterpreterFrame
 
     cdef PyFrameObject *frame = PyThreadState_GetFrame(tstate)
     cdef object caller = _frame_caller(frame)
-    cdef tuple args = _frame_args(frame, code_obj)
+    cdef tuple args = _frame_args(code_obj, <PyObject **>((<char *>_frame) + 72))
     cdef Node node = PyObject_CallObject(wrapper, args)  # TODO: _PyObject_Call(tstate, ...)
 
     cdef PyObject *value
