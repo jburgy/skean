@@ -7,7 +7,7 @@ name = "skean"
 version = "0.1.0"
 description = "PEP 523 based directed acyclic graph implementation in python"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.12"
 license = {file = "LICENSE"}
 dependencies = []
 
@@ -16,3 +16,6 @@ dev = [
     "pyright>=0.0.13.post0",
     "pytest>=7.0.1",
 ]
+
+[tool.meson-python.args]
+setup = ["-Dbuildtype=debug"]
