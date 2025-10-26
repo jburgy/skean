@@ -5,11 +5,11 @@ from functools import _CacheInfo, _lru_cache_wrapper
 import cython
 from cpython.function cimport PyFunction_GetCode
 from cpython.mem cimport PyMem_Free
-from cpython.object cimport PyObject_CallObject, PyObject_GetAttrString, PyObject_GetItem, PyObject_SetAttrString
+from cpython.object cimport PyObject_CallObject, PyObject_GetAttrString, PyObject_SetAttrString
 from cpython.pystate cimport PyInterpreterState, PyThreadState
 from cpython.pythread cimport PyThread_tss_alloc, PyThread_tss_create, PyThread_tss_get, PyThread_tss_is_created, PyThread_tss_set
 from cpython.ref cimport Py_DECREF, Py_INCREF
-from cpython.tuple cimport PyTuple_New, PyTuple_GET_ITEM, PyTuple_SET_ITEM
+from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
 
 cdef Py_tss_t *g_extra_slot = NULL
 
@@ -92,8 +92,7 @@ cdef object _code_wrapper(PyObject *code, bint create):
     return wrapper
 
 
-cdef object _frame_caller(PyFrameObject *frame):
-    cdef PyFrameObject *f_back = PyFrame_GetBack(frame)
+cdef object _frame_caller(PyFrameObject *f_back):
     cdef PyObject *frame_obj
     cdef object f_trace
 

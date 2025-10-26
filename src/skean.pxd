@@ -14,12 +14,9 @@ cdef extern from "Python.h":
 
     int PyUnstable_Code_GetExtra(PyObject *code, Py_ssize_t index, void **extra)
     int PyUnstable_Code_SetExtra(PyObject *code, Py_ssize_t index, void *extra)
-    PyObject *PyCode_GetVarnames(PyCodeObject *co)
 
     PyFrameObject *PyThreadState_GetFrame(PyThreadState *tstate)
     PyFrameObject *PyFrame_GetBack(PyFrameObject *frame)
-    PyCodeObject *PyFrame_GetCode(PyFrameObject *frame)
-    PyObject *PyFrame_GetLocals(PyFrameObject *frame)
 
     PyInterpreterState *PyInterpreterState_Get()
 
