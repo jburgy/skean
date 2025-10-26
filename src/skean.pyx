@@ -123,7 +123,7 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, _PyInterpreterFrame
 
     cdef PyFrameObject *frame = PyThreadState_GetFrame(tstate)
     cdef object caller = _frame_caller(frame)
-    cdef tuple args = _frame_args(code_obj, <PyObject **>((<char *>_frame) + 72))
+    cdef tuple args = _frame_args(code_obj, <PyObject **>((<void **>_frame) + 9))
     cdef Node node = PyObject_CallObject(wrapper, args)  # TODO: _PyObject_Call(tstate, ...)
 
     cdef PyObject *value
