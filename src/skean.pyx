@@ -10,6 +10,7 @@ from cpython.pystate cimport PyInterpreterState, PyThreadState
 from cpython.pythread cimport PyThread_tss_alloc, PyThread_tss_create, PyThread_tss_get, PyThread_tss_is_created, PyThread_tss_set
 from cpython.ref cimport Py_DECREF, Py_INCREF
 from cpython.tuple cimport PyTuple_New, PyTuple_SET_ITEM
+from cpython.version cimport PY_MINOR_VERSION
 
 cdef Py_tss_t *g_extra_slot = NULL
 
@@ -123,7 +124,7 @@ cdef PyObject *_PyEval_EvalFrameCache(PyThreadState *tstate, _PyInterpreterFrame
 
     cdef PyFrameObject *frame = PyThreadState_GetFrame(tstate)
     cdef object caller = _frame_caller(frame)
-    cdef tuple args = _frame_args(code_obj, <PyObject **>((<void **>_frame) + 9))
+    cdef tuple args = _frame_args(code_obj, (<PyObject **>_frame) + (9 if PY_MINOR_VERSION < 14 else 10))
     cdef Node node = PyObject_CallObject(wrapper, args)  # TODO: _PyObject_Call(tstate, ...)
 
     cdef PyObject *value
